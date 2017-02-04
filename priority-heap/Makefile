@@ -9,7 +9,10 @@ BINDIR = ./bin
 .PHONY: clean
 
 $(BUILDDIR)/%.o : %.cpp
-	$(CXX) $(CXXFLAGS)-c -I $(LIBDIR) $< -o $(BUILDDIR)/$@
+	$(CXX) $(CXXFLAGS) -c -I $(LIBDIR) $< -o $(BUILDDIR)/$@
+
+heap: $(BUILDDIR)/heap_test.o
+	$(CXX) $(CXXFLAGS) -o $(BINDIR)/$@
 
 clean::
 	rm -rf $(BUILDDIR)/* $(BINDIR)/*

@@ -1,8 +1,13 @@
-#include "heap.h"
+#include "heap.hpp"
 #include <iostream>
 
 int main() {
-  MinHeap<int> myHeap;
-  myHeap.push(3);
-  std::cout << myHeap.pop().content << std::endl; 
+  MaxHeap<int> myHeap;
+  int iterations = 100;
+  for (int i = 0; i < iterations; i++) {
+    myHeap.push(i, i);
+  }
+  for (int i = 0; i < iterations; i++) {
+    std::cout << myHeap.pop().content << std::endl;
+  }
 }

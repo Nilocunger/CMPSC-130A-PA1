@@ -1,9 +1,12 @@
 #ifndef HEAP_H
 #define HEAP_H
+#include <iostream>
 
 template<typename Content>
 class PriorityContainer {
   public: 
+    PriorityContainer() : priority(0) { }
+    PriorityContainer(Content content, int priority) : content(content), priority(priority) { }
     Content content;
     int priority;
     
@@ -16,49 +19,32 @@ class PriorityContainer {
     bool operator>=(PriorityContainer<Content> const& rhs) {  return (*this == rhs) || (*this > rhs);  }
 };
 
-template<typename Content>
-class Ptr {
-  private: 
-    Content *content;
-  public:
-    Ptr() {  this->c = nullptr;  }
-    Ptr(const Content& c) {  this->content = &c;  }
-    Ptr(const Ptr& other) {  this->content = &Content(*other.c);  }
-    ~Ptr() {  delete (*this->c);  }
-    Content& operator*() const {  return *c;  }
-    Content& operator=(const Content& c) {
-      this->content = &Content(*other.c);  
-    }
-
-    bool operator==(Content *c) {  return this->c == c;  }
-};
-
-enum HeapErrorCodes {OVERRIDE, NO_ELEMENT}; 
+enum HeapErrorCodes {OVERRIDE, NO_ELEMENT, NO_CHILD}; 
 template<typename NodeContents>
 class Heap {
   private:
-    Ptr<PriorityContainer<NodeContents>> *contents;
+    PriorityContainer<NodeContents> *contents;
     int size;
-    int numElems;
+    int occupied;
+
+    int getLastIndex() {  return this->occupied - 1;  }
+    int getOpenIndex() {  return this->occupied;  }
 
     void place(PriorityContainer<NodeContents> x, int index);
-    void placeLast(PriorityContainer<NodeContents> x) {
-      this->place(x, this->numElems - 1);
-    }
 
     PriorityContainer<NodeContents> grab(int index);
-    PriorityContainer<NodeContents> grabLast() { 
-      return this->grab(this->numElems - 1);
-    };
-
-    void swap(int index1, int index2);
-    void swapEnds();
 
     virtual bool moreTop(PriorityContainer<NodeContents>& x1, 
-                         PriorityContainer<NodeContents>& x2);
+                         PriorityContainer<NodeContents>& x2) {  return true;  }
+    bool compare(int index1, int index2) {
+      auto node1 = this->grab(index1);
+      auto node2 = this->grab(index2);
+      return this->moreTop(node1, node2);
+    }
+    int returnTopper(int index1, int index2);
 
-    int percolateDown(int index);
-    int percolateUp(int index);
+    void percolateDown(int index);
+    void percolateUp(int index);
 
     int getRightChildIndex(int index);
     int getLeftChildIndex(int index);
@@ -89,7 +75,7 @@ class MinHeap : public Heap<NodeContents> {
   private:
     bool moreTop(PriorityContainer<NodeContents>& x1, 
                  PriorityContainer<NodeContents>& x2) { 
-      return x1 > x2;
+      return x1 < x2;
     }
 };
 
@@ -98,14 +84,16 @@ class MaxHeap : public Heap<NodeContents> {
   private:
     bool moreTop(PriorityContainer<NodeContents>& x1, 
                  PriorityContainer<NodeContents>& x2) { 
-      return x1 < x2;
+      return x1 > x2;
     }
 };
 
 // Constructors and Destructors
 template<typename NodeContents>
 Heap<NodeContents>::Heap(int initialSize) {
-  this->contents = new Ptr<PriorityContainer<NodeContents>>[initialSize];
+  this->contents = new PriorityContainer<NodeContents>[initialSize];
+  this->size = initialSize;
+  this->occupied = 0;
 }
 
 template<typename NodeContents>
@@ -120,10 +108,11 @@ Heap<NodeContents>::~Heap() {
 // Element operations
 template<typename NodeContents>
 void Heap<NodeContents>::push(PriorityContainer<NodeContents> x) {
-  if (this->numElems >= this->size) {
-    int newSize = this->numElems * 2;
-    PriorityContainer<NodeContents> *newContents = new PriorityContainer<NodeContents>*[newSize];
-    for (int i = 0; i < this->numElems; i++) {
+  // std::cout << "PUSHING: " << x.priority << " " << x.content << std::endl;
+  if (this->occupied >= this->size) {
+    int newSize = this->occupied * 2;
+    PriorityContainer<NodeContents> *newContents = new PriorityContainer<NodeContents>[newSize];
+    for (int i = 0; i < this->occupied; i++) {
       newContents[i] = this->contents[i];
     }
     delete[] this->contents;
@@ -131,14 +120,21 @@ void Heap<NodeContents>::push(PriorityContainer<NodeContents> x) {
     this->size = newSize;
   }
 
-  this->placeLast(x);
-  this->percolateUp(this->numElems - 1);
+  this->place(x, this->getOpenIndex());
+  this->occupied++;
+  this->percolateUp(this->getLastIndex());
 }
 
 template<typename NodeContents>
 PriorityContainer<NodeContents> Heap<NodeContents>::pop() {
   PriorityContainer<NodeContents> toReturn = this->grab(0);
-  this->place(this->grabLast(), 0);
+  if (this->getLastIndex() == 0) {
+    this->occupied--;
+    return toReturn;
+  }
+  auto lastNode = this->grab(this->getLastIndex());
+  this->occupied--;
+  this->place(lastNode, 0);
   this->percolateDown(0);
   return toReturn;
 }
@@ -146,54 +142,60 @@ PriorityContainer<NodeContents> Heap<NodeContents>::pop() {
 
 // Percolation
 template<typename NodeContents>
-int Heap<NodeContents>::percolateDown(int index) {
-  auto leftChild = this->getLeftChild(index);
-  auto rightChild = this->getRightChild(index);
-  if (!leftChild) {  return index;  }
-  if (this->moreTop(leftChild, rightChild)) {
-    this->place(leftChild, index);
-    return this->percolateDown(this->getLeftChildIndex(index));
+void Heap<NodeContents>::percolateDown(int index) {
+  int leftChildIndex = this->getLeftChildIndex(index);
+  int rightChildIndex = this->getRightChildIndex(index);
+
+  try {
+    int compareAgainst = this->returnTopper(leftChildIndex, rightChildIndex);
+      // std::cout << "COMPARING: " << this->grab(index).content << " AND " << this->grab(compareAgainst).content << std::endl;
+    if (!this->compare(index, compareAgainst)) {
+      // std::cout << "SWAPPING" << std::endl;
+      auto tempNode = this->grab(compareAgainst);
+      this->place(this->grab(index), compareAgainst);
+      this->place(tempNode, index);
+      return this->percolateDown(compareAgainst);
+    }
+  } catch (const HeapErrorCodes&) {
+    return;
+  }
+}
+
+template<typename NodeContents>
+int Heap<NodeContents>::returnTopper(int index1, int index2) {
+  if (!this->hasNode(index1) && !this->hasNode(index2)) {
+    throw NO_CHILD;  
+  } else if (!this->hasNode(index1)) {
+    return index2;
+  } else if (!this->hasNode(index2)) {
+    return index1;
   } else {
-    this->place(rightChild, index);
-    return this->percolateDown(this->getRightChildIndex(index));
+    auto node1 = this->grab(index1);
+    auto node2 = this->grab(index2);
+    return (this->moreTop(node1, node2)) ? index1 : index2;
   }
 }
 
 template<typename NodeContents>
-int Heap<NodeContents>::percolateUp(int index) {
-  if (!this->hasNode(index)) {  return index;  }
-  if (this->getParent(index) > this->getNode(index)) {
-    int parentIndex = this->getParentIndex();
-    this->swap(parentIndex, index);
-    this->percolateUp(parentIndex);
+void Heap<NodeContents>::percolateUp(int index) {
+  int parentIndex = this->getParentIndex(index);
+  if (this->hasNode(parentIndex)) {
+    auto currentNode = this->grab(index);
+    auto parentNode = this->grab(parentIndex);
+    // std::cout << "CHILD: " << currentNode.priority << " PARENT: " << parentNode.priority << std::endl;
+    if (this->moreTop(currentNode, parentNode)) {
+      // std::cout << "SWAPPING" << std::endl;
+      this->place(currentNode, parentIndex);
+      this->place(parentNode, index);
+      this->percolateUp(parentIndex);
+    }
   }
 }
 
-
-// Child and Parent methods
-template<typename NodeContents>
-PriorityContainer<NodeContents> Heap<NodeContents>::getNode(int index) {
-  return (*this->contents[index]);
-}
 
 template<typename NodeContents>
 bool Heap<NodeContents>::hasNode(int index) {
-  return this->contents[index] != nullptr;
-}
-
-template<typename NodeContents>
-PriorityContainer<NodeContents> Heap<NodeContents>::getLeftChild(int index) {
-  return this->getChild(index, true);
-}
-
-template<typename NodeContents>
-PriorityContainer<NodeContents> Heap<NodeContents>::getRightChild(int index) {
-  return this->getChild(index, false);
-}
-
-template<typename NodeContents>
-PriorityContainer<NodeContents> Heap<NodeContents>::getChild(int index, bool isLeft) {
-  return this->getNode(getChildIndex(index, isLeft));
+  return (index >= 0) && (index < this->occupied);
 }
 
 template<typename NodeContents>
@@ -217,46 +219,20 @@ int Heap<NodeContents>::getChildIndex(int index, bool isLeft) {
 
 template<typename NodeContents>
 int Heap<NodeContents>::getParentIndex(int index) {
+  if (index == 0) {  return -1;  }
   return (index - 1) / 2;
 }
-
-template<typename NodeContents>
-PriorityContainer<NodeContents> Heap<NodeContents>::getParent(int index) {
-  return this->getNode(this->getParentIndex(index));
-}
-
 
 // Element moving
 template<typename NodeContents>
 void Heap<NodeContents>::place(PriorityContainer<NodeContents> x, int index) {
-  if (this->hasNode(index)) {  throw OVERRIDE;  }
-
-  this->getNode(index) = x;
-  this->numElems++;
+  this->contents[index] = x;
 }
 
 template<typename NodeContents>
 PriorityContainer<NodeContents> Heap<NodeContents>::grab(int index) {
-  if (!this->contents[index]) {
-    throw NO_ELEMENT;
-  }
-
-  PriorityContainer<NodeContents> toReturn = this->getNode(index);
-  delete this->getNode(index);
-  this->numElems--;
-  return toReturn;
-}
-
-template<typename NodeContents>
-void Heap<NodeContents>::swap(int index1, int index2) {
-  PriorityContainer<NodeContents> temp = this->grab(index1);
-  this->place(this->grab(index2), index1);
-  this->place(temp, index2);
-}
-
-template<typename NodeContents>
-void Heap<NodeContents>::swapEnds() {
-  this->swap(this->numElems, 0);
+  if (!this->hasNode(index)) {  throw NO_ELEMENT;  }
+  return this->contents[index];
 }
 
 #endif

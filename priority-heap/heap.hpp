@@ -1,6 +1,5 @@
 #ifndef HEAP_H
 #define HEAP_H
-#include <iostream>
 
 template<typename Content>
 class PriorityContainer {
@@ -68,6 +67,7 @@ class Heap {
     PriorityContainer<NodeContents> pop();
 
     void change(int index, int val);
+    bool isEmpty() {  return this->occupied == 0;  }
 };
 
 template<typename NodeContents>
@@ -108,7 +108,6 @@ Heap<NodeContents>::~Heap() {
 // Element operations
 template<typename NodeContents>
 void Heap<NodeContents>::push(PriorityContainer<NodeContents> x) {
-  // std::cout << "PUSHING: " << x.priority << " " << x.content << std::endl;
   if (this->occupied >= this->size) {
     int newSize = this->occupied * 2;
     PriorityContainer<NodeContents> *newContents = new PriorityContainer<NodeContents>[newSize];
@@ -148,9 +147,7 @@ void Heap<NodeContents>::percolateDown(int index) {
 
   try {
     int compareAgainst = this->returnTopper(leftChildIndex, rightChildIndex);
-      // std::cout << "COMPARING: " << this->grab(index).content << " AND " << this->grab(compareAgainst).content << std::endl;
     if (!this->compare(index, compareAgainst)) {
-      // std::cout << "SWAPPING" << std::endl;
       auto tempNode = this->grab(compareAgainst);
       this->place(this->grab(index), compareAgainst);
       this->place(tempNode, index);
@@ -182,9 +179,7 @@ void Heap<NodeContents>::percolateUp(int index) {
   if (this->hasNode(parentIndex)) {
     auto currentNode = this->grab(index);
     auto parentNode = this->grab(parentIndex);
-    // std::cout << "CHILD: " << currentNode.priority << " PARENT: " << parentNode.priority << std::endl;
     if (this->moreTop(currentNode, parentNode)) {
-      // std::cout << "SWAPPING" << std::endl;
       this->place(currentNode, parentIndex);
       this->place(parentNode, index);
       this->percolateUp(parentIndex);

@@ -1,11 +1,16 @@
 #ifndef HEAP_H
 #define HEAP_H
 
+/*
+ * Container for the heap. Has a field for the content and a tag to support 
+ * the priority within the heap. Has overloaded comparison operators to make 
+ * writing tiebreaker functions more convenient
+ */
 template<typename Content>
 class PriorityContainer {
   public: 
     PriorityContainer() : priority(0) { }
-    PriorityContainer(Content content, int priority) : content(content), priority(priority) { }
+    PriorityContainer(Content content, long long priority) : content(content), priority(priority) { }
     Content content;
     long long priority;
     
@@ -18,11 +23,20 @@ class PriorityContainer {
     bool operator>=(PriorityContainer<Content> const& rhs) {  return (*this == rhs) || (*this > rhs);  }
 };
 
+// Since not much info is needed from the error messages, it is easiest 
+// to just return an error code
 enum HeapErrorCodes {OVERRIDE, NO_ELEMENT, NO_CHILD}; 
 
-template<typename Content>
-using Prioritized = PriorityContainer<Content>;
 
+/* 
+ * The main heap object. Contains a dynamically allocated array that holds
+ * all of the PriorityContainer objects. Keeps track of the elements in the 
+ * array by a count of the occupied cells and the total number of cells, 
+ * allowing it to automatically resize itself when necessary. 
+ *
+ * NOTE: this class should be subclassed to be used. The comparison function
+ * moreTop is meant to be overriden.
+ */
 template<typename NodeContents>
 class Heap {
   private:
@@ -70,22 +84,36 @@ class Heap {
     }
     PriorityContainer<NodeContents> pop();
 
+    // Since I make no assumptions about the comparison function 
+    // except that it gives a legitimate location in the heap for
+    // the object, it is necessary to try both percolateUp'ing and
+    // percolateDown'ing
     void incKey(int index, int val) {
       this->contents[index].priority += val;
       this->percolateUp(index);
+      this->percolateDown(index);
     }
     
     void decKey(int index, int val) {
       this->contents[index].priority -= val;
+      this->percolateUp(index);
       this->percolateDown(index);
     }
 
     bool isEmpty() {  return this->occupied == 0;  }
 };
 
+// Create an alias for the type of Tiebreaker function pointers
 template<typename Content>
 using Tiebreaker = bool (*)(Content& c1, int p1, Content& c2, int p2);
 
+/*
+ * The actual classes that are mean to be used. Min and Max heap are both
+ * templated on a tiebreaker function, which compares two objects in the 
+ * case that they both have the same priority. They are templated over this
+ * function because the changing of this function utterly changes the ordering
+ * of the heap and therefore the type of the heap itself
+ */
 template<typename NodeContents, Tiebreaker<NodeContents> onTie>
 class MinHeap : public Heap<NodeContents> {
   private:
@@ -120,6 +148,7 @@ Heap<NodeContents>::Heap(int initialSize) {
   this->occupied = 0;
 }
 
+// Guess a good starting size for the user
 template<typename NodeContents>
 Heap<NodeContents>::Heap() : Heap(20) { }
 
@@ -129,7 +158,14 @@ Heap<NodeContents>::~Heap() {
 }
 
 
-// Element operations
+/* push: 
+ * Checks the size of the current heap and resizes the dynamic array in 
+ * memory, copying the data between the old and new arrays. To make sure we're
+ * not constantly performing the relatively expensive operation of resizing the
+ * heap, we double the size each time we resize. 
+ * For the actual operation, we simply place the new item in the bottom-most index
+ * and then percolate it upwards until it finds its correct position. 
+ */
 template<typename NodeContents>
 void Heap<NodeContents>::push(PriorityContainer<NodeContents> x) {
   if (this->occupied >= this->size) {
@@ -148,6 +184,12 @@ void Heap<NodeContents>::push(PriorityContainer<NodeContents> x) {
   this->percolateUp(this->getLastIndex());
 }
 
+/* pop:
+ * Gets the node to return, and then addresses the edge case of us having removed
+ * the last node in the heap. Grabs the bottom-most element in the heap, places it
+ * in the top where we just removed an element, and then percolates it downward. 
+ * Eventually returns the value we popped off the heap.
+ */
 template<typename NodeContents>
 PriorityContainer<NodeContents> Heap<NodeContents>::pop() {
   PriorityContainer<NodeContents> toReturn = this->grab(0);
@@ -163,7 +205,8 @@ PriorityContainer<NodeContents> Heap<NodeContents>::pop() {
 }
  
 
-// Percolation
+// Standard percolation methods for helping elements to find their correct
+// place in the heap
 template<typename NodeContents>
 void Heap<NodeContents>::percolateDown(int index) {
   int leftChildIndex = this->getLeftChildIndex(index);
@@ -183,6 +226,22 @@ void Heap<NodeContents>::percolateDown(int index) {
 }
 
 template<typename NodeContents>
+void Heap<NodeContents>::percolateUp(int index) {
+  int parentIndex = this->getParentIndex(index);
+  if (this->hasNode(parentIndex)) {
+    auto currentNode = this->grab(index);
+    auto parentNode = this->grab(parentIndex);
+    if (this->moreTop(currentNode, parentNode)) {
+      this->place(currentNode, parentIndex);
+      this->place(parentNode, index);
+      this->percolateUp(parentIndex);
+    }
+  }
+}
+
+// Helpful methods for comparing two indices in the heap. Returns the 
+// index of the more upper element
+template<typename NodeContents>
 int Heap<NodeContents>::returnTopper(int index1, int index2) {
   if (!this->hasNode(index1) && !this->hasNode(index2)) {
     throw NO_CHILD;  
@@ -197,26 +256,15 @@ int Heap<NodeContents>::returnTopper(int index1, int index2) {
   }
 }
 
-template<typename NodeContents>
-void Heap<NodeContents>::percolateUp(int index) {
-  int parentIndex = this->getParentIndex(index);
-  if (this->hasNode(parentIndex)) {
-    auto currentNode = this->grab(index);
-    auto parentNode = this->grab(parentIndex);
-    if (this->moreTop(currentNode, parentNode)) {
-      this->place(currentNode, parentIndex);
-      this->place(parentNode, index);
-      this->percolateUp(parentIndex);
-    }
-  }
-}
 
 
+// Check to make sure we don't accidentally index outside of our array
 template<typename NodeContents>
 bool Heap<NodeContents>::hasNode(int index) {
   return (index >= 0) && (index < this->occupied);
 }
 
+// Helper methods for getting children and parents of indices in the heap
 template<typename NodeContents>
 int Heap<NodeContents>::getLeftChildIndex(int index) {
   return this->getChildIndex(index, true);
@@ -242,7 +290,8 @@ int Heap<NodeContents>::getParentIndex(int index) {
   return (index - 1) / 2;
 }
 
-// Element moving
+// Element moving. Provide some checks and abstract away the array details
+// so that more checking can be easily added if necessary.
 template<typename NodeContents>
 void Heap<NodeContents>::place(PriorityContainer<NodeContents> x, int index) {
   this->contents[index] = x;

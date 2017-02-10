@@ -60,9 +60,6 @@ class Simulator {
     std::mt19937 mt;
     std::uniform_int_distribution<float> prob_distribution{0, 100};
     std::uniform_int_distribution<int> comp_distribution;
-
-    // Constructors and Deconstructors
-    ~Simulation() {  delete[] computers;  }
     
     // Fetch-Execute cycle
     Event fetch(); 
@@ -92,7 +89,11 @@ class Simulator {
     }
     bool detectedByIDS(int source, int target);
   public:
+
+    // Constructors and Deconstructors
     Simulator(int numComputers, int attackProbability, int detectProbability);
+    ~Simulator() {  delete[] computers;  }
+
     void run();
 };
 
@@ -150,7 +151,7 @@ Event Simulator::fetch() {
 
 // Convenient helper function for counting the infected computers
 // for determining if end conditions have been reached
-int computersInfected() {
+int Simulator::computersInfected() {
   int infected = 0;
   for (int i = 0; i < this->numComputers; i++) {
     if (this->computers[i] == true) {  infected++;  }

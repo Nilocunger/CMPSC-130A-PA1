@@ -1,5 +1,5 @@
 CXX = clang++
-CXXFLAGS = --std=c++11 -g
+CXXFLAGS = --std=c++11 -g -Wswitch
 
 SRCDIR = ./src
 BUILDDIR = ./build

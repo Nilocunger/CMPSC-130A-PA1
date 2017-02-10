@@ -19,6 +19,10 @@ class PriorityContainer {
 };
 
 enum HeapErrorCodes {OVERRIDE, NO_ELEMENT, NO_CHILD}; 
+
+template<typename Content>
+using Prioritized = PriorityContainer<Content>;
+
 template<typename NodeContents>
 class Heap {
   private:
@@ -66,25 +70,45 @@ class Heap {
     }
     PriorityContainer<NodeContents> pop();
 
-    void change(int index, int val);
+    void incKey(int index, int val) {
+      this->contents[index].priority += val;
+      this->percolateUp(index);
+    }
+    
+    void decKey(int index, int val) {
+      this->contents[index].priority -= val;
+      this->percolateDown(index);
+    }
+
     bool isEmpty() {  return this->occupied == 0;  }
 };
 
-template<typename NodeContents>
+template<typename Content>
+using Tiebreaker = bool (*)(Content& c1, int p1, Content& c2, int p2);
+
+template<typename NodeContents, Tiebreaker<NodeContents> onTie>
 class MinHeap : public Heap<NodeContents> {
   private:
     bool moreTop(PriorityContainer<NodeContents>& x1, 
                  PriorityContainer<NodeContents>& x2) { 
-      return x1 < x2;
+      if (x1 == x2) {
+        return onTie(x1.content, x1.priority, x2.content, x2.priority);
+      } else {
+        return x1 < x2;
+      }
     }
 };
 
-template<typename NodeContents>
+template<typename NodeContents, Tiebreaker<NodeContents> onTie>
 class MaxHeap : public Heap<NodeContents> {
   private:
     bool moreTop(PriorityContainer<NodeContents>& x1, 
                  PriorityContainer<NodeContents>& x2) { 
-      return x1 > x2;
+      if (x1 == x2) {
+        return onTie(x1.content, x1.priority, x2.content, x2.priority);
+      } else {
+        return x1 > x2;
+      }
     }
 };
 

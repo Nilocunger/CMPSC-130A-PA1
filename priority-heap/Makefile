@@ -8,13 +8,22 @@ BINDIR = ./bin
 
 .PHONY: clean
 
-$(BUILDDIR)/heap_test.o : heap_test.cpp heap.hpp
-	$(CXX) $(CXXFLAGS) -I heap.hpp -c $< -o $@
+simulator : $(BUILDDIR)/simulator.o pqueue.hpp heap.hpp
+	$(CXX) $(CXXFLAGS) $< -o $(BINDIR)/$@
+
+$(BUILDDIR)/heap_test.o : heap_test.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(BUILDDIR)/pqueue_test.o : pqueue_test.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(BUILDDIR)/%.o : %.cpp
-	$(CXX) $(CXXFLAGS) -c -I $< -o $@
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-heap: $(BUILDDIR)/heap_test.o
+heap : $(BUILDDIR)/heap_test.o heap.hpp
+	$(CXX) $(CXXFLAGS) $< -o $(BINDIR)/$@
+
+pqueue : $(BUILDDIR)/pqueue_test.o pqueue.hpp heap.hpp
 	$(CXX) $(CXXFLAGS) $< -o $(BINDIR)/$@
 
 clean::

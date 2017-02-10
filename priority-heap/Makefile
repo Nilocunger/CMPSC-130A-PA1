@@ -1,11 +1,13 @@
 CXX = clang++
 CXXFLAGS = --std=c++11
 
-SRCDIR = ./src
 BUILDDIR = ./build
 BINDIR = ./bin
 
-.PHONY: clean
+.PHONY: clean directories
+
+directories = $(BUILDDIR) $(BINDIR)
+all : directories
 
 simulation : $(BUILDDIR)/simulation.o pqueue.hpp heap.hpp
 	$(CXX) $(CXXFLAGS) $< -o $(BINDIR)/$@
@@ -24,6 +26,9 @@ heap : $(BUILDDIR)/heap_test.o heap.hpp
 
 pqueue : $(BUILDDIR)/pqueue_test.o pqueue.hpp heap.hpp
 	$(CXX) $(CXXFLAGS) $< -o $(BINDIR)/$@
+
+directories: $(BUILDDIR) $(BINDIR)
+	$(MKDIR) -p $(BUILDDIR) $(BINDIR)
 
 clean::
 	rm -rf $(BUILDDIR)/* $(BINDIR)/*

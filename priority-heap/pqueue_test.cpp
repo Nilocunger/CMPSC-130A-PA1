@@ -6,7 +6,7 @@ bool tiebreaker(std::string& x1, int p1, std::string& x2, int p2) {
 }
 
 int main() {
-  PriorityQueue<std::string> q;
+  PriorityQueue<std::string, tiebreaker> q;
   std::string attack = "ATTACK";
   std::string repair = "REPAIR";
   q.push(attack, 5);

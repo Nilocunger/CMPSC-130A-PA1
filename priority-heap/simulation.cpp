@@ -132,6 +132,9 @@ void Simulator::run() {
       case TIMED_OUT:
         std::cout << "Draw" << std::endl;
         break;
+      case QUEUE_EMPTY:
+        std::cerr << "The queue is empty. This is not intended. Simulation terminating." << std::endl;
+        exit(1);
     }
   }
 }

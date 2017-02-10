@@ -2,7 +2,6 @@ CXX = clang++
 CXXFLAGS = --std=c++11 -g
 
 SRCDIR = ./src
-LIBDIR = ./lib
 BUILDDIR = ./build
 BINDIR = ./bin
 

@@ -10,7 +10,7 @@ class PriorityQueue {
     PriorityQueue() : heap() { }
     PriorityQueue(int size) : heap(size) { }
 
-    void push(Contents& c, int priority) {  this->heap.push(c, priority);  }
+    void push(Contents& c, long long priority) {  this->heap.push(c, priority);  }
     Contents popContent() {  return this->heap.pop().content;  }
     PriorityContainer<Contents> pop() {  return this->heap.pop();  }
     bool isEmpty() {  return this->heap.isEmpty();  }

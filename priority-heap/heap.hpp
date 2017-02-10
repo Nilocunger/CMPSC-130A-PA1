@@ -7,7 +7,7 @@ class PriorityContainer {
     PriorityContainer() : priority(0) { }
     PriorityContainer(Content content, int priority) : content(content), priority(priority) { }
     Content content;
-    int priority;
+    long long priority;
     
     bool operator==(PriorityContainer<Content> const& rhs) {  return this->priority == rhs.priority;  }
     bool operator<(PriorityContainer<Content> const& rhs) {  return this->priority < rhs.priority;  }

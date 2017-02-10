@@ -8,7 +8,7 @@ BINDIR = ./bin
 
 .PHONY: clean
 
-simulator : $(BUILDDIR)/simulator.o pqueue.hpp heap.hpp
+simulation : $(BUILDDIR)/simulation.o pqueue.hpp heap.hpp
 	$(CXX) $(CXXFLAGS) $< -o $(BINDIR)/$@
 
 $(BUILDDIR)/heap_test.o : heap_test.cpp

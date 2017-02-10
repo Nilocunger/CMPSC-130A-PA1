@@ -1,7 +1,7 @@
 #include "pqueue.hpp"
 #include <random>
 #include <iostream>
-#include <time.h>
+#include <stdlib.h>
 
 
 // Since subclassing seems a little overkill for the task, we will 
@@ -39,7 +39,7 @@ enum END_CONDITIONS {QUEUE_EMPTY, NETWORK_CONQUERED, NETWORK_DEFENDED, TIMED_OUT
 class Simulator {
   private:
     // Time tracking
-    int time = 0;
+    int t = 0;
     long long maxTime = 8640000000;
 
     // Simulation characteristics from the user
@@ -58,7 +58,7 @@ class Simulator {
 
     // Fancy STL tools for random number generation
     std::mt19937 mt;
-    std::uniform_int_distribution<float> prob_distribution{0, 100};
+    std::uniform_int_distribution<int> prob_distribution{0, 100};
     std::uniform_int_distribution<int> comp_distribution;
     
     // Fetch-Execute cycle
@@ -104,7 +104,7 @@ Simulator::Simulator(int numComputers, int attackProbability, int detectProbabil
   for (int i = 0; i < this->numComputers; i++) {
     this->computers[i] = false;
   }
-  auto seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+  auto seed = time(0);
   this->mt = std::mt19937(seed);
   this->comp_distribution = std::uniform_int_distribution<int>(0, numComputers - 1);
   this->scheduleDeployAttack(-1);
@@ -143,8 +143,8 @@ Event Simulator::fetch() {
   if (this->computersInfected() == 0 && this->hasInfected) throw NETWORK_DEFENDED;
 
   auto next = q.pop();
-  this->time = next.priority;
-  if (this->time > maxTime) throw TIMED_OUT;
+  this->t = next.priority;
+  if (this->t > maxTime) throw TIMED_OUT;
   
   return next.content;
 }
@@ -187,9 +187,9 @@ void Simulator::scheduleNotify(int source) {
     Event e;
     e.action = NOTIFY;
     e.source = source;
-    int time = this->time + 100;
-    this->q.push(e, this->time);
-    std::cout << "Notify(" << time << ", " << e.source << ")" << std::endl;
+    int t = this->t + 100;
+    this->q.push(e, this->t);
+    std::cout << "Notify(" << t << ", " << e.source << ")" << std::endl;
   }
 }
 
@@ -198,9 +198,9 @@ void Simulator::scheduleDeployAttack(int source) {
   e.action = DEPLOY_ATTACK;
   e.source = source;
   e.target = this->randomComputer(e.source);
-  int time = this->time + 1000;
-  this->q.push(e, time);
-  std::cout << "Deploy_Attack(" << time << ", " << e.source << ", " << e.target << ")" << std::endl;
+  int t = this->t + 1000;
+  this->q.push(e, t);
+  std::cout << "Deploy_Attack(" << t << ", " << e.source << ", " << e.target << ")" << std::endl;
 }
 
 void Simulator::scheduleExecuteAttack(int source, int target) {
@@ -208,9 +208,9 @@ void Simulator::scheduleExecuteAttack(int source, int target) {
   e.action = EXECUTE_ATTACK;
   e.source = source;
   e.target = target;
-  int time = this->time + 100;
-  this->q.push(e, this->time + 100);
-  std::cout << "Execute_Attack(" << time << ", " << e.source << ", " << e.target << ")" << std::endl;
+  int t = this->t + 100;
+  this->q.push(e, this->t + 100);
+  std::cout << "Execute_Attack(" << t << ", " << e.source << ", " << e.target << ")" << std::endl;
 }
 
 void Simulator::scheduleDeployRepair(int target) {
@@ -218,18 +218,18 @@ void Simulator::scheduleDeployRepair(int target) {
   e.action = DEPLOY_REPAIR;
   e.target = target;
   this->sysadmin.nextFixTime += 10000;
-  int time = this->sysadmin.nextFixTime;
-  this->q.push(e, time);
-  std::cout << "Deploy_Repair(" << time << ", " << e.target << ")" << std::endl;
+  int t = this->sysadmin.nextFixTime;
+  this->q.push(e, t);
+  std::cout << "Deploy_Repair(" << t << ", " << e.target << ")" << std::endl;
 }
 
 void Simulator::scheduleExecuteRepair(int target) {
   Event e;
   e.action = EXECUTE_REPAIR;
   e.target = target;
-  int time = this->time + 100;
-  this->q.push(e, this->time + 100);
-  std::cout << "Execute_Repair(" << time << ", " << e.target << ")" << std::endl;
+  int t = this->t + 100;
+  this->q.push(e, this->t + 100);
+  std::cout << "Execute_Repair(" << t << ", " << e.target << ")" << std::endl;
 }
 
 

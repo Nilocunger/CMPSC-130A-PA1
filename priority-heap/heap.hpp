@@ -40,9 +40,9 @@ enum HeapErrorCodes {OVERRIDE, NO_ELEMENT, NO_CHILD};
 template<typename NodeContents>
 class Heap {
   private:
-    PriorityContainer<NodeContents> *contents;
     int size;
     int occupied;
+    PriorityContainer<NodeContents> *contents;
 
     int getLastIndex() {  return this->occupied - 1;  }
     int getOpenIndex() {  return this->occupied;  }
@@ -76,6 +76,9 @@ class Heap {
   public:
     Heap();
     Heap(int initialSize);
+    Heap(Heap& h);
+    Heap(Heap<NodeContents>&& other);
+    Heap<NodeContents> operator=(Heap<NodeContents>& h);
     ~Heap();
 
     void push(PriorityContainer<NodeContents> x);
@@ -151,6 +154,27 @@ Heap<NodeContents>::Heap(int initialSize) {
 // Guess a good starting size for the user
 template<typename NodeContents>
 Heap<NodeContents>::Heap() : Heap(20) { }
+
+// Copy constructor
+template<typename NodeContents>
+Heap<NodeContents>::Heap(Heap<NodeContents>& rhs) : Heap() {
+  this->contents = new PriorityContainer<NodeContents>[rhs.size];
+  for (int i = 0; i < rhs.occupied; i++) {
+    this->contents[i] = rhs.contents[i];
+  }
+  this->occupied = rhs.occupied;
+  this->size = rhs.size;
+}
+
+// Overloaded assignment operator. While admittedly not the most robust
+// implementation, this program is not intended to function in an environment 
+// in which it is absolutely critical that it performs
+template<typename NodeContents>
+Heap<NodeContents> Heap<NodeContents>::operator=(Heap<NodeContents>& rhs) {
+  delete[] this->contents;
+  new (this) Heap(rhs);
+  return *this;
+}
 
 template<typename NodeContents>
 Heap<NodeContents>::~Heap() {

@@ -17,7 +17,7 @@ struct Event {
 // Sysadmin struct to simply track when its next available fix can be
 // performed
 struct SysAdmin {
-  // ****, we're dealing with a sysadmin (htttps://xkcd.com/705/)
+  // ****, we're dealing with a sysadmin (https://xkcd.com/705/)
   int nextFixTime;
 };
 
@@ -92,6 +92,8 @@ class Simulator {
 
     // Constructors and Deconstructors
     Simulator(int numComputers, int attackProbability, int detectProbability);
+    Simulator operator=(Simulator& rhs);
+    Simulator(Simulator& rhs);
     ~Simulator() {  delete[] computers;  }
 
     void run();
@@ -107,14 +109,42 @@ Simulator::Simulator(int numComputers, int attackProbability, int detectProbabil
   auto seed = time(0);
   this->mt = std::mt19937(seed);
   this->comp_distribution = std::uniform_int_distribution<int>(0, numComputers - 1);
-  this->scheduleDeployAttack(-1);
 }
 
+// Copy constructor
+Simulator::Simulator(Simulator& s) : Simulator(s.numComputers, s.attackProbability, s.detectProbability) {
+  this->t = s.t;
+  this->maxTime = s.maxTime;
+  this->numComputers = s.numComputers;
+  this->attackProbability = s.attackProbability;
+  this->detectProbability = s.detectProbability;
+  this->q = s.q;
+  this->sysadmin = s.sysadmin;
+  delete[] this->computers;
+  this->computers = new bool[this->numComputers];
+  for (int i = 0; i < this->numComputers; i++) {
+    this->computers[i] = s.computers[i];
+  }
+  this->hasInfected = s.hasInfected;
+  this->mt = s.mt;
+  this->prob_distribution = s.prob_distribution;
+  this->comp_distribution = s.comp_distribution;
+}
+
+// Overloaded assignment operator. While admittedly not the most robust
+// implementation, this program is not intended to function in an environment 
+// in which it is absolutely critical that it performs
+Simulator Simulator::operator=(Simulator& s) {
+  delete[] this->computers;
+  new (this) Simulator(s);
+  return *this;
+}
 
 // Starts the simulation, runs the fetch-execute cycle, and 
 // monitors the simulation for the ending condition
 void Simulator::run() {
   std::cout << "STARTING SIMULATION" << std::endl;
+  this->scheduleDeployAttack(-1);
   try {
     Event fetched;
     while (true) {
@@ -127,7 +157,10 @@ void Simulator::run() {
         std::cout << "Attacker wins" << std::endl;
         break;
       case NETWORK_DEFENDED:
-        std::cout << "Sysadmin wins" << std::endl;
+        std::cout << "Sysadmin wins" << std::endl
+                  << std::endl << "-------------------------------------------------------------------" << std::endl << std::endl 
+                  << "****, we're dealing with a sysadmin (https://xkcd.com/705/)" << std::endl
+                  << std::endl << "-------------------------------------------------------------------" << std::endl << std::endl;
         break;
       case TIMED_OUT:
         std::cout << "Draw" << std::endl;
@@ -252,11 +285,11 @@ void Simulator::processExecuteAttack(Event& e) {
     if (!this->computers[e.target]) {
       this->computers[e.target] = true;
       this->scheduleDeployAttack(e.target);
+      if (this->detectedByIDS(e.source, e.target)) {
+        this->scheduleNotify(e.source);
+        this->scheduleNotify(e.target);
+      }
     }
-  }
-  if (this->detectedByIDS(e.source, e.target)) {
-    this->scheduleNotify(e.source);
-    this->scheduleNotify(e.target);
   }
 }
 
@@ -278,8 +311,8 @@ bool Simulator::detectedByIDS(int source, int target) {
   if (source == -1) {
     return this->attempt(this->detectProbability);
   } else {
-    bool sourceSide = (source > (this->numComputers / 2));
-    bool targetSide = (target > (this->numComputers / 2));
+    bool sourceSide = (source >= (this->numComputers / 2));
+    bool targetSide = (target >= (this->numComputers / 2));
     bool crossesIDS = (sourceSide != targetSide);
     return crossesIDS && this->attempt(this->detectProbability);
   }

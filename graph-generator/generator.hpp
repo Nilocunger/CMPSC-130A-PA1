@@ -18,6 +18,9 @@ class Graph {
   public:
     Graph(int numNodes, int seed);
     const int* const* getAdjMatrix() const { return this->adjMatrix; }
+    void changeNode(int i, int j, int newValue) {
+      this->adjMatrix[i][j] = this->adjMatrix[j][i] = newValue;
+    }
 };
 
 Graph::Graph(int numNodes, int seed) : uniform(1, 100), cost(-120, 100) {
@@ -37,16 +40,16 @@ Graph::Graph(int numNodes, int seed) : uniform(1, 100), cost(-120, 100) {
     int max = -1337;
     int maxIndex = -1337;
     for (int j = 0; j < numNodes; j++) {
-      if (adjMatrix[i][j] > max) {
-        max = adjMatrix[i][j];
+      if (this->adjMatrix[i][j] > max) {
+        max = this->adjMatrix[i][j];
         maxIndex = j;
       }
-      if (adjMatrix[i][j] <= 0) {
-        adjMatrix[i][j] = -1337;
+      if (this->adjMatrix[i][j] <= 0) {
+        this->adjMatrix[i][j] = -1337;
       }
     }
     if (max <= 0) {
-      adjMatrix[i][maxIndex] = this->getRandUniform();
+      this->adjMatrix[i][maxIndex] = this->getRandUniform();
     }
   }
 

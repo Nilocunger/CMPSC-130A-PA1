@@ -3,11 +3,11 @@ CXXFLAGS = --std=c++11 -g -Wall -Wextra
 
 .PHONY: clean 
 
-graph : test.o generator.hpp 
+generate: command.o
 	$(CXX) $(CXXFLAGS) $< -o $@
 
-test.o : test.cpp 
+command.o : command.cpp generator.hpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@ 
 
 clean:: 
-	rm graph test.o
+	rm generate command.o

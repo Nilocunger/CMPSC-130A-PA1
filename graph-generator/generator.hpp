@@ -2,7 +2,7 @@
 #define GENERATOR_H
 #include <random>
 
-using mt1337 = std::mt19937;
+using mt1337 = std::mt19937; // Because I can
 class Graph {
   private:
     int** adjMatrix;

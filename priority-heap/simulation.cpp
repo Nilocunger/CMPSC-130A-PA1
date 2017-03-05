@@ -321,7 +321,7 @@ bool Simulator::detectedByIDS(int source, int target) {
         
 int main(int argc, char** argv) {
   if (argc != 4) {
-    std::cout << "Usage: simulator [num_computers] [percent_success] [percent_detect]" << std::endl;
+    std::cout << "Usage: simulator <num_computers> <percent_success> <percent_detect>" << std::endl;
     exit(1);
   }
   Simulator simulator(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]));

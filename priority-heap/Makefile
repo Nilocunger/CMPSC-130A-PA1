@@ -1,5 +1,6 @@
 CXX = clang++
 CXXFLAGS = --std=c++11 -g -Wall -Wextra
+MKDIR = mkdir
 
 BUILDDIR = ./build
 BINDIR = ./bin
@@ -9,7 +10,7 @@ BINDIR = ./bin
 directories = $(BUILDDIR) $(BINDIR)
 all : directories
 
-simulation : $(BUILDDIR)/simulation.o pqueue.hpp heap.hpp
+simulator : $(BUILDDIR)/simulation.o pqueue.hpp heap.hpp
 	$(CXX) $(CXXFLAGS) $< -o $(BINDIR)/$@
 
 $(BUILDDIR)/heap_test.o : heap_test.cpp

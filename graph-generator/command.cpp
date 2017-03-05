@@ -1,7 +1,6 @@
 #include <iostream>
 #include <stdlib.h>
-#include <fcntl.h>
-#include <unistd.h>
+#include <random>
 
 #include "generator.hpp"
 
@@ -19,24 +18,10 @@ char *lpad(char *text, int length, char padWith) {
   return padded;
 }
 
-int getRandomSeed() {
-  int fd = open("/dev/urandom", O_RDONLY);
-  if (fd < 0) {
-    return time(NULL);
-  } else {
-     unsigned int seed;
-     if (read(fd, &seed, sizeof(seed))) {
-       return seed;
-     } else {
-       return time(NULL);
-     }
-  }
-}
-
 int main(int argc, char **argv) {
   int seed;
   if (argc == 2) {
-    seed = getRandomSeed();
+    seed = (std::random_device())();
   } else if (argc == 3) {
     seed = atoi(argv[2]);
   } else {

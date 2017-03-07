@@ -1,5 +1,6 @@
 #include <iostream>
-#include <stdlib.h>
+#include <cstdlib>
+#include <cstring>
 #include <random>
 
 #include "generator.hpp"

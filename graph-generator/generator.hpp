@@ -35,30 +35,25 @@ Graph::Graph(int numNodes, int seed) : uniform(1, 100), cost(-120, 100) {
       this->adjMatrix[j][i] = adjMatrix[i][j] = getRandCost();
     }
   }
-
+	
   for (int i = 0; i < numNodes; i++) {
     int max = -1337;
     int maxIndex = -1337;
     for (int j = 0; j < numNodes; j++) {
-      if (this->adjMatrix[i][j] > max) {
+      if (this->adjMatrix[i][j] > max and i !=j ) {
         max = this->adjMatrix[i][j];
         maxIndex = j;
       }
-      if (this->adjMatrix[i][j] <= 0) {
-        this->adjMatrix[i][j] = -1337;
+      if (this->adjMatrix[i][j] <= 0 or i == j) {
+        this->adjMatrix[i][j] = 0;
       }
     }
+
     if (max <= 0) {
       this->adjMatrix[i][maxIndex] = this->getRandUniform();
     }
   }
 
-  for (int i = 0; i < numNodes; i++) {
-    for (int j = 0; j < numNodes; j++) {
-      if (this->adjMatrix[i][j] == -1337 || i == j) {
-        this->adjMatrix[i][j] = 0;
-      }
-    }
-  }
+
 }
 #endif // GENERATOR_H
